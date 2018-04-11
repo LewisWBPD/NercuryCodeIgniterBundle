@@ -179,7 +179,6 @@ function ci_bootstrap($kernel, $override_controller_class = false, $load_fake_co
     if (!$load_fake_controller) {
     /** END */
      
-        $RTR->_set_routing();
         // Set any routing overrides that may exist in the main index file
         if (isset($routing)) {
             $RTR->_set_overrides($routing);
