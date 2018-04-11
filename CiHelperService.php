@@ -167,18 +167,40 @@ class CiHelperService
             // Path to the front controller (this file)
             define('FCPATH', $applicationFolder.'../');
 
-//            if (!defined('APPPATH')) {
-//                // The path to the "application" folder
-//                if (is_dir($application_folder)) {
-//                    define('APPPATH', $application_folder . '/');
-//                } else {
-//                    if (!is_dir(BASEPATH . $application_folder . '/')) {
-//                        exit("Your application folder path does not appear to be set correctly. Please open the following file and correct this: " . SELF);
-//                    }
-//
-//                    define('APPPATH', BASEPATH . $application_folder . '/');
-//                }
-//            }
+            // The path to the "views" directory
+            if ( ! isset($view_folder[0]) && is_dir(APPPATH.'views'.DIRECTORY_SEPARATOR))
+            {
+                $view_folder = APPPATH.'views';
+            }
+            elseif (is_dir($view_folder))
+            {
+                if (($_temp = realpath($view_folder)) !== FALSE)
+                {
+                    $view_folder = $_temp;
+                }
+                else
+                {
+                    $view_folder = strtr(
+                        rtrim($view_folder, '/\\'),
+                        '/\\',
+                        DIRECTORY_SEPARATOR.DIRECTORY_SEPARATOR
+                    );
+                }
+            }
+            elseif (is_dir(APPPATH.$view_folder.DIRECTORY_SEPARATOR))
+            {
+                $view_folder = APPPATH.strtr(
+                    trim($view_folder, '/\\'),
+                    '/\\',
+                    DIRECTORY_SEPARATOR.DIRECTORY_SEPARATOR
+                );
+            }
+            else
+            {
+                throw new \LogicException('Your view folder path does not appear to be set correctly');
+            }
+
+            define('VIEWPATH', $view_folder.DIRECTORY_SEPARATOR);
 
             $this->pathsInitialized = true;
         }
