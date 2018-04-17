@@ -136,7 +136,7 @@ function ci_bootstrap($kernel, $override_controller_class = false, $load_fake_co
      * The subclass prefix allows CI to know if a core class is
      * being extended via a library in the local application
      * "libraries" folder. Since CI allows config items to be
- * overridden via data set in the main index.php file,
+     * overridden via data set in the main index.php file,
      * before proceeding we need to know if a subclass_prefix
      * override exists.  If so, we will set this value now,
      * before any classes are loaded
@@ -176,7 +176,7 @@ function ci_bootstrap($kernel, $override_controller_class = false, $load_fake_co
      *  Start the timer... tick tock tick tock...
      * ------------------------------------------------------
      */
-	$BM =& load_class('Benchmark', 'core');
+	$BM = load_class('Benchmark', 'core');
     $BM->mark('total_execution_time_start');
     $BM->mark('loading_time:_base_classes_start');
 
@@ -185,7 +185,7 @@ function ci_bootstrap($kernel, $override_controller_class = false, $load_fake_co
      *  Instantiate the hooks class
      * ------------------------------------------------------
      */
-	$EXT =& load_class('Hooks', 'core');
+	$EXT = load_class('Hooks', 'core');
 
     /*
      * ------------------------------------------------------
@@ -204,7 +204,7 @@ function ci_bootstrap($kernel, $override_controller_class = false, $load_fake_co
 	 * depending on another class that uses it.
 	 *
      */
-	$CFG =& load_class('Config', 'core');
+	$CFG = load_class('Config', 'core');
     
     // Do we have any manually set config items in the index.php file?
 	if (isset($assign_to_config) && is_array($assign_to_config))
@@ -215,20 +215,20 @@ function ci_bootstrap($kernel, $override_controller_class = false, $load_fake_co
 		}
     }
 
-	/*
-	 * ------------------------------------------------------
-	 * Important charset-related stuff
-	 * ------------------------------------------------------
-	 *
-	 * Configure mbstring and/or iconv if they are enabled
-	 * and set MB_ENABLED and ICONV_ENABLED constants, so
-	 * that we don't repeatedly do extension_loaded() or
-	 * function_exists() calls.
-	 *
-	 * Note: UTF-8 class depends on this. It used to be done
-	 * in it's constructor, but it's _not_ class-specific.
-	 *
-	 */
+/*
+ * ------------------------------------------------------
+ * Important charset-related stuff
+ * ------------------------------------------------------
+ *
+ * Configure mbstring and/or iconv if they are enabled
+ * and set MB_ENABLED and ICONV_ENABLED constants, so
+ * that we don't repeatedly do extension_loaded() or
+ * function_exists() calls.
+ *
+ * Note: UTF-8 class depends on this. It used to be done
+ * in it's constructor, but it's _not_ class-specific.
+ *
+ */
 	$charset = strtoupper(config_item('charset'));
 	ini_set('default_charset', $charset);
 
@@ -281,22 +281,29 @@ function ci_bootstrap($kernel, $override_controller_class = false, $load_fake_co
      * ------------------------------------------------------
      *  Instantiate the UTF-8 class
      * ------------------------------------------------------
+     *
+     * Note: Order here is rather important as the UTF-8
+     * class needs to be used very early on, but it cannot
+     * properly determine if UTf-8 can be supported until
+     * after the Config class is instantiated.
+     *
      */
-	$UNI =& load_class('Utf8', 'core');
+
+    $UNI = load_class('Utf8', 'core');
 
     /*
      * ------------------------------------------------------
      *  Instantiate the URI class
      * ------------------------------------------------------
      */
-	$URI =& load_class('URI', 'core');
+    $URI = load_class('URI', 'core');
 
     /*
      * ------------------------------------------------------
      *  Instantiate the routing class and set the routing
      * ------------------------------------------------------
      */
-    $RTR =& load_class('Router', 'core');
+    $RTR = load_class('Router', 'core');
     
     /** MODIFICATION FOR SYMFONY (add) */
     if (!$load_fake_controller) {
@@ -316,38 +323,39 @@ function ci_bootstrap($kernel, $override_controller_class = false, $load_fake_co
      *  Instantiate the output class
      * ------------------------------------------------------
      */
-	$OUT =& load_class('Output', 'core');
+    $OUT = load_class('Output', 'core');
 
     /*
      * ------------------------------------------------------
      * 	Is there a valid cache file?  If so, we're done...
      * ------------------------------------------------------
      */
-	if ($EXT->call_hook('cache_override') === FALSE && $OUT->_display_cache($CFG, $URI) === TRUE)
-	{
-		exit;
-	}
+    if ($EXT->call_hook('cache_override') === FALSE) {
+        if ($OUT->_display_cache($CFG, $URI) == TRUE) {
+            exit;
+        }
+    }
 
     /*
      * -----------------------------------------------------
      * Load the security class for xss and csrf support
      * -----------------------------------------------------
      */
-	$SEC =& load_class('Security', 'core');
+    $SEC = load_class('Security', 'core');
 
     /*
      * ------------------------------------------------------
      *  Load the Input class and sanitize globals
      * ------------------------------------------------------
      */
-	$IN	=& load_class('Input', 'core');
+    $IN = load_class('Input', 'core');
 
     /*
      * ------------------------------------------------------
      *  Load the Language class
      * ------------------------------------------------------
      */
-	$LANG =& load_class('Lang', 'core');
+    $LANG = load_class('Lang', 'core');
 
     /*
      * ------------------------------------------------------
@@ -395,131 +403,39 @@ function ci_bootstrap($kernel, $override_controller_class = false, $load_fake_co
     if (!$load_fake_controller) {
     /** END */
 
-		/*
-		* ------------------------------------------------------
-		*  Sanity checks
-		* ------------------------------------------------------
-		*
-		*  The Router class has already validated the request,
-		*  leaving us with 3 options here:
-		*
-		*	1) an empty class name, if we reached the default
-		*	   controller, but it didn't exist;
-		*	2) a query string which doesn't go through a
-		*	   file_exists() check
-		*	3) a regular request for a non-existing page
-		*
-		*  We handle all of these as a 404 error.
-		*
-		*  Furthermore, none of the methods in the app controller
-		*  or the loader class can be called via the URI, nor can
-		*  controller methods that begin with an underscore.
-		*/
+        /*
+        * ------------------------------------------------------
+        *  Security check
+        * ------------------------------------------------------
+        *
+        *  None of the functions in the app controller or the
+        *  loader class can be called via the URI, nor can
+        *  controller functions that begin with an underscore
+        */
+        $class = $RTR->fetch_class();
+        $method = $RTR->fetch_method();
 
-		$e404 = FALSE;
-		$class = ucfirst($RTR->class);
-		$method = $RTR->method;
+        if (!class_exists($class)
+                OR strncmp($method, '_', 1) == 0
+                OR in_array(strtolower($method), array_map('strtolower', get_class_methods('CI_Controller')))
+        ) {
+            if (!empty($RTR->routes['404_override'])) {
+                $x = explode('/', $RTR->routes['404_override']);
+                $class = $x[0];
+                $method = (isset($x[1]) ? $x[1] : 'index');
+                if (!class_exists($class)) {
+                    if (!file_exists(APPPATH . 'controllers/' . $class . '.php')) {
+                        show_404("{$class}/{$method}");
+                    }
 
-		if (empty($class) OR ! file_exists(APPPATH.'controllers/'.$RTR->directory.$class.'.php'))
-		{
-			$e404 = TRUE;
-		}
-		else
-		{
-			require_once(APPPATH.'controllers/'.$RTR->directory.$class.'.php');
+                    include_once(APPPATH . 'controllers/' . $class . '.php');
+                }
+            } else {
+                show_404("{$class}/{$method}");
+            }
+        }
 
-			if ( ! class_exists($class, FALSE) OR $method[0] === '_' OR method_exists('CI_Controller', $method))
-			{
-				$e404 = TRUE;
-			}
-			elseif (method_exists($class, '_remap'))
-			{
-				$params = array($method, array_slice($URI->rsegments, 2));
-				$method = '_remap';
-			}
-			elseif ( ! method_exists($class, $method))
-			{
-				$e404 = TRUE;
-			}
-			/**
-			 * DO NOT CHANGE THIS, NOTHING ELSE WORKS!
-			 *
-			 * - method_exists() returns true for non-public methods, which passes the previous elseif
-			 * - is_callable() returns false for PHP 4-style constructors, even if there's a __construct()
-			 * - method_exists($class, '__construct') won't work because CI_Controller::__construct() is inherited
-			 * - People will only complain if this doesn't work, even though it is documented that it shouldn't.
-			 *
-			 * ReflectionMethod::isConstructor() is the ONLY reliable check,
-			 * knowing which method will be executed as a constructor.
-			 */
-			elseif ( ! is_callable(array($class, $method)))
-			{
-				$reflection = new ReflectionMethod($class, $method);
-				if ( ! $reflection->isPublic() OR $reflection->isConstructor())
-				{
-					$e404 = TRUE;
-				}
-			}
-		}
-
-		if ($e404)
-		{
-			if ( ! empty($RTR->routes['404_override']))
-			{
-				if (sscanf($RTR->routes['404_override'], '%[^/]/%s', $error_class, $error_method) !== 2)
-				{
-					$error_method = 'index';
-				}
-
-				$error_class = ucfirst($error_class);
-
-				if ( ! class_exists($error_class, FALSE))
-				{
-					if (file_exists(APPPATH.'controllers/'.$RTR->directory.$error_class.'.php'))
-					{
-						require_once(APPPATH.'controllers/'.$RTR->directory.$error_class.'.php');
-						$e404 = ! class_exists($error_class, FALSE);
-					}
-					// Were we in a directory? If so, check for a global override
-					elseif ( ! empty($RTR->directory) && file_exists(APPPATH.'controllers/'.$error_class.'.php'))
-					{
-						require_once(APPPATH.'controllers/'.$error_class.'.php');
-						if (($e404 = ! class_exists($error_class, FALSE)) === FALSE)
-						{
-							$RTR->directory = '';
-						}
-					}
-				}
-				else
-				{
-					$e404 = FALSE;
-				}
-			}
-
-			// Did we reset the $e404 flag? If so, set the rsegments, starting from index 1
-			if ( ! $e404)
-			{
-				$class = $error_class;
-				$method = $error_method;
-
-				$URI->rsegments = array(
-					1 => $class,
-					2 => $method
-				);
-			}
-			else
-			{
-				show_404($RTR->directory.$class.'/'.$method);
-			}
-		}
-
-		if ($method !== '_remap')
-		{
-			$params = array_slice($URI->rsegments, 2);
-		}
-
-
-		/** MODIFICATION FOR SYMFONY (add) */
+    /** MODIFICATION FOR SYMFONY (add) */
     }
     /** END */
     
@@ -577,7 +493,36 @@ function ci_bootstrap($kernel, $override_controller_class = false, $load_fake_co
         *  Call the requested method
         * ------------------------------------------------------
         */
-		call_user_func_array(array(&$CI, $method), $params);
+        // Is there a "remap" function? If so, we call it instead
+        if (method_exists($CI, '_remap')) {
+            $CI->_remap($method, array_slice($URI->rsegments, 2));
+        } else {
+            // is_callable() returns TRUE on some versions of PHP 5 for private and protected
+            // methods, so we'll use this workaround for consistent behavior
+            if (!in_array(strtolower($method), array_map('strtolower', get_class_methods($CI)))) {
+                // Check and see if we are using a 404 override and use it.
+                if (!empty($RTR->routes['404_override'])) {
+                    $x = explode('/', $RTR->routes['404_override']);
+                    $class = $x[0];
+                    $method = (isset($x[1]) ? $x[1] : 'index');
+                    if (!class_exists($class)) {
+                        if (!file_exists(APPPATH . 'controllers/' . $class . '.php')) {
+                            show_404("{$class}/{$method}");
+                        }
+
+                        include_once(APPPATH . 'controllers/' . $class . '.php');
+                        unset($CI);
+                        $CI = new $class();
+                    }
+                } else {
+                    show_404("{$class}/{$method}");
+                }
+            }
+
+            // Call the requested method.
+            // Any URI segments present (besides the class/function) will be passed to the method for convenience
+            call_user_func_array(array(&$CI, $method), array_slice($URI->rsegments, 2));
+        }
 
     /** MODIFICATION FOR SYMFONY (add) */
     }
