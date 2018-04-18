@@ -235,12 +235,13 @@ class CiHelperService
         if (!self::$ciLoaded) {
             self::$ciLoaded = true;
 
-            if ($this->kernel->getContainer()->isScopeActive('request')) {
-                $this->setCiPaths($this->kernel->getContainer()->get('request'));
+            $request = $this->kernel->getContainer()->get('request_stack')->getCurrentRequest();
+
+            if ($request) {
+                $this->setCiPaths($request);
             } else {
                 $this->setCiPaths();
             }
-
             require_once __DIR__.'/ci_bootstrap.php';
 
             \ci_bootstrap(
