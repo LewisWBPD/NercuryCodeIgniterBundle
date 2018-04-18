@@ -387,7 +387,7 @@ function ci_bootstrap($kernel, $override_controller_class = false, $load_fake_co
         // Note: The Router class automatically validates the controller path using the router->_validate_request().
         // If this include fails it means that the default controller in the Routes.php file is not resolving to something valid.
         if (!file_exists(APPPATH . 'controllers/' . $RTR->fetch_directory() . $RTR->fetch_class() . '.php')) {
-            show_error('Unable to load your default controller. Please make sure the controller specified in your Routes.php file is valid.');
+		throw new \Exception('Unable to load your default controller. Please make sure the controller specified in your Routes.php file is valid.');
         }
 
         include(APPPATH . 'controllers/' . $RTR->fetch_directory() . $RTR->fetch_class() . '.php');
