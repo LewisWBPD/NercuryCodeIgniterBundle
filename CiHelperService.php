@@ -226,8 +226,6 @@ class CiHelperService
      */
     public function getInstance($useFakeController = true)
     {
-        $this->unsetNoticeErrorLevel();
-
         if (function_exists('get_instance')) {
             self::$ciLoaded = true;
         }
@@ -273,7 +271,6 @@ class CiHelperService
 
         self::$ciLoaded = true;
 
-        $this->unsetNoticeErrorLevel();
         $this->setCiPaths($request);
 
         require_once __DIR__.'/ci_bootstrap.php';
@@ -313,22 +310,6 @@ class CiHelperService
     public function getSystemPath()
     {
         return $this->systemPath;
-    }
-
-    /**
-     * @return self
-     */
-    public function unsetNoticeErrorLevel()
-    {
-        // code igniter likes notices
-        $errorLevel = error_reporting();
-        if ($errorLevel > 0) {
-            error_reporting($errorLevel & ~E_NOTICE);
-        } elseif ($errorLevel < 0) {
-            error_reporting(E_ALL & ~E_NOTICE);
-        }
-
-        return $this;
     }
 }
 
