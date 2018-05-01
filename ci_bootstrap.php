@@ -368,16 +368,21 @@ function ci_bootstrap($kernel, $override_controller_class = false, $load_fake_co
     /** MODIFICATION FOR SYMFONY (add) */
     $base_controller_class = 'CI_Controller';
     /** END */
-    
-    if (file_exists(APPPATH . 'core/' . $CFG->config['subclass_prefix'] . 'Controller.php')) {
-        require APPPATH . 'core/' . $CFG->config['subclass_prefix'] . 'Controller.php';
-        /** MODIFICATION FOR SYMFONY (add) */
-        if ($override_controller_class === false)
-            $base_controller_class = $CFG->config['subclass_prefix'] . 'Controller';
-        else
-            $base_controller_class = $override_controller_class;
-        /** END */
-    }
+
+	if (file_exists(APPPATH . 'core/' . $CFG->config['subclass_prefix'] . 'Controller.php')) {
+		require APPPATH . 'core/' . $CFG->config['subclass_prefix'] . 'Controller.php';
+		$base_controller_class = $CFG->config['subclass_prefix'] . 'Controller';
+	}
+
+	/** MODIFICATION FOR SYMFONY (add) */
+	if ($override_controller_class === false) {
+		$base_controller_class = $CFG->config['subclass_prefix'] . 'Controller';
+	} else {
+		$base_controller_class = $override_controller_class;
+	}
+	/** END */
+
+	dump($override_controller_class);
 
     /** MODIFICATION FOR SYMFONY (add) */
     if (!$load_fake_controller) {
