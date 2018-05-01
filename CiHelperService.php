@@ -120,7 +120,7 @@ class CiHelperService
 
         if ($this->pathsInitialized === false) {
             $scriptFile = $request !== null ?
-                '.'.$request->getBasePath().$request->getScriptName()
+                '.'.$request->getPathInfo()
                 : __FILE__;
 
             $rootPath = realpath($this->kernel->getRootDir().'/..');
