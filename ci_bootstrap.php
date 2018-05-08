@@ -369,16 +369,16 @@ function ci_bootstrap($kernel, $override_controller_class = false, $load_fake_co
     $base_controller_class = 'CI_Controller';
 	
     if ($override_controller_class === false) {
- 	$new_base_controller_class = $CFG->config['subclass_prefix'] . 'Controller';
-	$new_base_controller_path = 'core/' . $base_controller_class . '.php';
+        $new_base_controller_class = $CFG->config['subclass_prefix'] . 'Controller';
+        $new_base_controller_path = 'core/' . $new_base_controller_class . '.php';
     } else {
-	$new_base_controller_class = $override_controller_class;
-	$new_base_controller_path = 'controllers/' . $base_controller_class . '.php';
+        $new_base_controller_class = $override_controller_class;
+        $new_base_controller_path = 'controllers/' . $new_base_controller_class . '.php';
     }
 
     if (file_exists(APPPATH . $new_base_controller_path)) {
-	$base_controller_class = $new_base_controller_class;
-	require APPPATH . $base_controller_path;
+        $base_controller_class = $new_base_controller_class;
+        require APPPATH . $new_base_controller_path;
     }
 
     /** END */
